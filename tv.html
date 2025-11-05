@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="appUrl" content="https://7.innovatestream.pe:2020/VideoPlayer/contigofm" />
+    <link href="/video-js.min.css" rel="stylesheet">
+    <link href="/quality-selector.css" rel="stylesheet">
+    <link rel="icon" href="favicon.ico">
+    <title>tv</title>
+    <style>
+        .video-js .vjs-control {
+            width: 3.5em;
+        }
+        .video-js .vjs-control-bar {
+            background-color: transparent;
+            background-image: linear-gradient(#00000000 0%, 60%, #000000d5);
+            font-size: 16px;
+        }
+        .vjs-quality-selector .vjs-menu-content {
+            font-size: 0.65rem;
+        }
+        .custom-volume-button {
+            width: 1px;
+            height: 1px;
+            font-family: VideoJS;
+            font-weight: 400;
+            font-style: normal;
+            position: absolute;
+            z-index: 2;
+            bottom: 39px;
+            right: 58px;
+            color: #FFF;
+            font-size: 16px;
+            font-size: 1.8em;
+            text-shadow: 0px 0px 4px #000;
+        }
+        .custom-volume-button::before {
+            content: "\f104";
+        }
+        .video-js .vjs-volume-vertical {
+            background-color: transparent;
+        }
+        .vjs-volume-bar.vjs-slider-vertical {
+            height: 4em;
+            margin: 3.35em auto
+        }
+        .vjs-slider-vertical .vjs-volume-level {
+            width: 0.35em;
+            background-color: #0079fd;
+        }
+        .player-container {
+            display: flex;
+            width: 100%;
+        }
+        .video-js {
+            flex: 2 1 auto;
+        }
+        .vjs-playlist {
+            flex: 1 2 auto;
+            overflow-y: scroll;
+            height: 100vh;
+        }
+
+        /* Estilos para asegurar que las barras de progreso y buffer se muestren */
+        /* Barra de carga (Buffering) */
+        .vjs-progress-control .vjs-progress-holder .vjs-load-progress {
+            background-color: #ff6600; /* Color de la barra de carga */
+            height: 100%;
+        }
+
+        /* Barra de progreso (Reproducción) */
+        .vjs-progress-control .vjs-progress-holder .vjs-play-progress {
+            background-color: #0079fd; /* Color de la barra de progreso */
+            height: 100%;
+        }
+
+        /* Asegurarse de que la barra de progreso tenga un tamaño adecuado */
+        .vjs-progress-control .vjs-progress-holder {
+            height: 6px;
+        }
+    </style>
+</head>
+<body>
+<div class="player-container">
+    <i class="custom-volume-button" style="display: none"></i>
+    <video id="videojs" class="video-js vjs-default-skin vjs-big-play-centered" controls autoplay preload="auto" fluid="true" poster="maran.png?v=1">
+        <source src="https://luna-1-video.mediaserver.digital/exitosatv_233b-4b49-a726-5a451262/index.fmp4.m3u8" type="application/x-mpegURL">
+        <p class="vjs-no-js">
+            To view this video please enable JavaScript, and consider upgrading to a web browser that
+            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+        </p>
+    </video>
+</div>
+
+<script src="/video.min.js"></script>
+<script type="text/javascript">
+    var player;
+    (function() {
+        player = videojs('videojs', {
+            controlBar: {
+                children: [
+                    'PlayToggle',
+                    'ProgressControl',    // Asegúrate de que este control esté habilitado para mostrar la barra de progreso
+                    'LiveDisplay',
+                    'RemainingTimeDisplay',
+                    'CustomControlSpacer',
+                    'PictureInPictureToggle',
+                    'FullscreenToggle',
+                ],
+                volumePanel: {
+                    inline: false
+                },
+            },
+            autoplay: true,
+            preload: 'auto',
+            techOrder: ['html5', 'flash'],
+            html5: {
+                nativeAudioTracks: true,
+                nativeVideoTracks: true,
+                vhs: {
+                    withCredentials: false,
+                    debug: true,
+                    playbackRates: [0.5, 1, 1.5, 2],
+                    bufferLowLength: 20,
+                    bufferHighLength: 50,
+                    maxBufferLength: 80,
+                    liveSyncDuration: 80,
+                }
+            }
+        });
+
+        // Lógica para rotar al modo horizontal cuando se entra en pantalla completa
+        player.on('fullscreenchange', function() {
+            if (player.isFullscreen()) {
+                // Detecta si estamos en pantalla completa y force la orientación a horizontal
+                if (window.screen.orientation && window.screen.orientation.lock) {
+                    window.screen.orientation.lock("landscape").catch(function(error) {
+                        console.error("Error al bloquear la orientación: ", error);
+                    });
+                }
+            } else {
+                // Si salimos del modo pantalla completa, liberamos la orientación
+                if (window.screen.orientation && window.screen.orientation.unlock) {
+                    window.screen.orientation.unlock();
+                }
+            }
+        });
+
+
+
+function attemptReconnection() {
+        var retries = 0;
+        var maxRetries = 5; // Número máximo de intentos de reconexión
+        var retryInterval = 5000; // Intervalo entre intentos en milisegundos (5 segundos)
+
+        function reconnect() {
+            if (retries < maxRetries) {
+                console.log(`Intentando reconectar... (Intento ${retries + 1})`);
+                player.src({ type: 'application/x-mpegURL', src: "https://7.innovatestream.pe:19360/tvcliente0027/tvcliente0027.m3u8" });
+                player.load();
+                player.play().catch(function() {
+                    retries++;
+                    setTimeout(reconnect, retryInterval);
+                });
+            } else {
+                console.error("No se pudo reconectar después de varios intentos.");
+            }
+        }
+
+        reconnect();
+    }
+    // Manejadores de eventos
+    player.on('error', function() {
+        console.error("Error detectado en la reproducción. Intentando reconectar...");
+        attemptReconnection();
+    });
+
+    player.on('ended', function() {
+        console.log("La transmisión ha terminado. Intentando reconectar...");
+        attemptReconnection();
+    });
+
+
+        player.ready(function () {
+            var promise = player.play();
+
+            if (promise !== undefined) {
+                promise.then(function () {
+                    console.log('autoplay started');
+                }).catch(function (error) {
+                    console.log('autoplay prevented');
+                    player.play();
+                    document.querySelector('.custom-volume-button').style.display = 'block';
+                });
+            }
+        });
+
+        player.on('useractive', function () {
+            document.querySelector('.custom-volume-button').style.display = 'none';
+        });
+
+        player.on('userinactive', function () {
+            document.querySelector('.custom-volume-button').style.display = player.volume() == 0 || document.querySelector('video').getAttribute('muted') === 'muted' ? 'block' : 'none';
+        });
+
+        player.on('volumechange', function () {
+            document.querySelector('.custom-volume-button').style.display = player.volume() == 0 || document.querySelector('video').getAttribute('muted') === 'muted' ? 'block' : 'none';
+        });
+    })();
+</script>
+</body>
+</html>
